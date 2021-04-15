@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Cerebellar mutism prediction</title>
+    <style>
+      :root {
+        --text-color: #555555;
+        --text-highlight-color: #29324d;
+      }
+
+      /* Common */
+      html {
+        margin: 0;
+        padding: 0;
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+        -webkit-user-select: none;
+        -webkit-font-smoothing: antialiased;
+        font-family: system-ui;
+      }
+
+      body {
+        margin: 15px 15px 0 15px;
+        padding: 0;
+      }
+
+      h1,
+      .option,
+      #result-percentage,
+      #result-label {
+        color: var(--text-highlight-color);
+      }
+
+      .option {
+        font-weight: 500;
+        padding-right: 10px;
+        padding-bottom: 10px;
+      }
+
+      form {
+        display: table;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      label {
+        display: table-row;
+      }
+
+      .subtitle {
+        color: var(--text-color);
+        display: block;
+        font-size: 0.75em;
+        font-weight: 400;
+      }
+
+      input,
+      select,
+      .option {
+        display: table-cell;
+        font-size: 1em;
+      }
+
+      h1 {
+        font-size: 1.5em;
+        font-weight: 600;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      @media (max-width: 350px) {
+        h1 {
+          font-size: 1.25em !important;
+        }
+      }
+
+      #result-container {
+        width: 100%;
+        text-align: center;
+        position: -webkit-sticky;
+        position: sticky;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.85);
+        padding-bottom: 15px;
+      }
+
+      #result-percentage {
+        font-size: 3.125em;
+        font-weight: 400;
+        display: block;
+      }
+
+      #result-label {
+        font-size: 0.75em;
+        font-weight: 400;
+        display: block;
+      }
+    </style>
+    <script>
+      const FEATURE_SCALER = {
+        scale: [
+          1413.5273965807223,
+          0.33366700427583,
+          414.0077590145159,
+          493.6130650979277,
+          0.34411625048596567,
+          0.26884920001572726,
+          0.3279188274573444,
+          0.47634852789817395,
+          0.4807921504015384,
+          0.0985281923639303,
+          0.4112975875177065,
+          0.4659442010178149,
+          0.49804983005517944,
+          0.4210838525981225,
+          0.38932803238558394,
+          0.42418250299576343,
+          0.42418250299576343,
+          0.49759127609605963,
+          0.48079215040153833,
+          0.435806093546919,
+          0.4959224353659245,
+          0.4912488694636632,
+          0.435806093546919,
+          0.4930066485916347,
+          0.4763485278981739,
+          0.38532654655725157,
+          0.4859621071134796,
+          0.4930066485916346,
+          0.37267799624996495,
+          0.23529411764705885,
+          1.1153614063617363,
+          1.235726695141585,
+          0.7942702529929623,
+          0.9065993720891883,
+          0.730898354051512,
+          0.06510879004166518,
+          1.056151206844093,
+          0.48474914934753255,
+          0.4146432994079907,
+          0.49215295678475035,
+          0.18203377085908964,
+          0.20535647123189615,
+          0.06984219043517159,
+          0.0698421904351716,
+          1.0,
+          0.4871227184890144,
+          0.48712271848901445,
+          0.49913419848462176,
+          0.42720243718588785,
+          0.35898287472313056,
+          0.215908975936718,
+          0.16895772489817729,
+          0.4912488694636632,
+          0.44375607495124203,
+          0.4385269021464817,
+        ],
+        mean: [
+          2157.156862745098,
+          0.5687254901960784,
+          802.9558823529412,
+          1017.4019607843137,
+          0.13725490196078433,
+          0.0784313725490196,
+          0.8774509803921569,
+          0.6519607843137255,
+          0.6372549019607843,
+          0.00980392156862745,
+          0.21568627450980393,
+          0.6813725490196079,
+          0.5441176470588235,
+          0.23039215686274508,
+          0.18627450980392157,
+          0.23529411764705882,
+          0.23529411764705882,
+          0.5490196078431373,
+          0.3627450980392157,
+          0.2549019607843137,
+          0.5637254901960784,
+          0.4068627450980392,
+          0.2549019607843137,
+          0.5833333333333334,
+          0.3480392156862745,
+          0.18137254901960784,
+          0.6176470588235294,
+          0.4166666666666667,
+          0.16666666666666666,
+          0.9411764705882353,
+          4.306107843137254,
+          4.4616421568627445,
+          10.446573529411763,
+          4.490656862745098,
+          13.161887254901961,
+          0.34090531186402534,
+          4.650730475240944,
+          0.37745098039215685,
+          0.22058823529411764,
+          0.4117647058823529,
+          0.03431372549019608,
+          0.04411764705882353,
+          0.004901960784313725,
+          0.004901960784313725,
+          0.0,
+          0.6127450980392157,
+          0.3872549019607843,
+          0.5294117647058824,
+          0.24019607843137256,
+          0.15196078431372548,
+          0.049019607843137254,
+          0.029411764705882353,
+          0.4068627450980392,
+          0.2696078431372549,
+          0.25980392156862747,
+        ],
+      };
+
+      const FORM_ID = "predictors",
+        NUM_PREDICTORS = 55,
+        NUM_OUTPUTS = 1,
+        RESULT_ID = "result-percentage",
+        MODEL_PATH = "./ann.json";
+
+      let predictors;
+      let model;
+
+      const setPredictionPercentAnimated = (percentage, duration) => {
+        const element = document.getElementById(RESULT_ID);
+        const startPercentage = parseFloat(element.innerHTML) || 0;
+        const rangePercentage = percentage - startPercentage;
+
+        const startTimestamp = performance.now();
+
+        const step = (timestamp) => {
+          const elapsedTime = timestamp - startTimestamp;
+          const progress = Math.min(elapsedTime / (duration || Number.MIN_VALUE), 1);
+
+          const value = (startPercentage + progress * rangePercentage).toFixed(1);
+          element.innerHTML = value;
+
+          if (progress < 1) window.requestAnimationFrame(step);
+        };
+        window.requestAnimationFrame(step);
+      };
+
+      const updatePrediction = (animated = true) => {
+        predictors = new Array(NUM_PREDICTORS).fill(0);
+
+        const predictionForm = document.getElementById(FORM_ID);
+        for (element of predictionForm.elements) {
+          if (element.tagName == "INPUT") {
+            if (element.type == "checkbox") {
+              if (element.checked) {
+                predictors[parseInt(element.dataset.col, 10)] = 1;
+              }
+            } else if (element.type == "number") {
+              predictors[parseInt(element.dataset.col, 10)] = parseFloat(
+                element.value
+              );
+            }
+          } else if (element.tagName == "SELECT") {
+            for (option of element.selectedOptions) {
+              if (option.selected) {
+                predictors[parseInt(option.dataset.col, 10)] = 1;
+              }
+            }
+          }
+        }
+
+        predictors = predictors.map(
+          (predictor, index) =>
+            (predictor - FEATURE_SCALER.mean[index]) / FEATURE_SCALER.scale[index]
+        );
+
+        const [output] = window.model
+          .map((network) => network.run(predictors))
+          .reduce(
+            (average, values, _, { length }) =>
+              average.map(
+                (averageValue, index) => averageValue + values[index] / length
+              ),
+            new Array(NUM_OUTPUTS).fill(0)
+          );
+        const probability = Math.min(Math.max(output, 0), 1) * 100.0;
+
+        setPredictionPercentAnimated(probability, animated ? 300 : 0);
+      };
+
+      (async () => {
+        const fannReady = new Promise(
+          (resolve) => (window.FANN_ready = () => resolve())
+        );
+        const ready = new Promise((resolve) =>
+          document.addEventListener("DOMContentLoaded", resolve)
+        );
+
+        const fetchModelData = fetch(MODEL_PATH).then((response) => response.json());
+
+        const [, , modelData] = await Promise.all([ready, fannReady, fetchModelData]);
+
+        window.model = Object.values(modelData).map((data) => FANN.create(data));
+
+        document.getElementById(FORM_ID).addEventListener("change", updatePrediction);
+        updatePrediction(false);
+      })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/louisstow/fann.js/fann.js"></script>
+  </head>
+  <body>
+    <h1>Cerebellar mutism prediction</h1>
+
+    <form id="predictors">
+      <label>
+        <span class="option">Gender</span>
+        <select>
+          <option data-col="46">Male</option>
+          <option data-col="45">Female</option>
+        </select>
+      </label>
+      <label>
+        <span class="option">
+          Age at pre-op MRI
+          <span class="subtitle">(days)</span>
+        </span>
+        <input type="number" data-col="0" value="0" min="0" step="1" />
+      </label>
+      <label>
+        <span class="option">Diameter</span>
+        <input type="number" data-col="1" value="0" min="0" step="0.01" />
+      </label>
+      <label>
+        <span class="option">Pre-operative radiological diagnosis</span>
+        <select>
+          <option data-col="47">Medulloblastoma</option>
+          <option data-col="48">Ependymoma</option>
+          <option data-col="50">Pilocytic astrocytoma</option>
+          <option data-col="51">ATRT</option>
+          <option data-col="49">Other</option>
+        </select>
+      </label>
+      <label>
+        <span class="option">
+          Lowest solid ADC value
+          <span class="subtitle">(from largest axial diameter of tumour)</span>
+        </span>
+        <input type="number" data-col="2" value="0" min="0" step="1" />
+      </label>
+      <label>
+        <span class="option">
+          Mean solid ADC value
+          <span class="subtitle">(from largest axial diameter of tumour)</span>
+        </span>
+        <input type="number" data-col="3" value="0" min="0" step="1" />
+      </label>
+      <label>
+        <span class="option">Location</span>
+        <select multiple>
+          <option data-col="43">Vermis</option>
+          <option data-col="37">Rostral intraventricular</option>
+          <option data-col="40">Caudal intraventricular</option>
+          <option data-col="44">Right hemispheric</option>
+          <option data-col="42">Left hemispheric</option>
+          <option data-col="38">Brainstem</option>
+          <option data-col="41">Other</option>
+        </select>
+      </label>
+      <label>
+        <span class="option">Metastatic at presentation</span>
+        <input type="checkbox" data-col="4" />
+      </label>
+      <label>
+        <span class="option">Brainstem infiltration</span>
+        <input type="checkbox" data-col="5" />
+      </label>
+      <label>
+        <span class="option">Braintem compression</span>
+        <input type="checkbox" data-col="6" />
+      </label>
+      <label>
+        <span class="option">Vermian infiltration</span>
+        <input type="checkbox" data-col="7" />
+      </label>
+      <label>
+        <span class="option">Vermian compression</span>
+        <input type="checkbox" data-col="8" />
+      </label>
+      <label>
+        <span class="option">Midbrain infiltration</span>
+        <input type="checkbox" data-col="9" />
+      </label>
+      <label>
+        <span class="option">Midbrain compression</span>
+        <input type="checkbox" data-col="10" />
+      </label>
+      <label>
+        <span class="option">Fourth ventricular invasion</span>
+        <input type="checkbox" data-col="11" />
+      </label>
+      <label>
+        <span class="option">Fourth ventricular compression</span>
+        <input type="checkbox" data-col="12" />
+      </label>
+      <label>
+        <span class="option">Right cerebellar hemisphere infiltration</span>
+        <input type="checkbox" data-col="13" />
+      </label>
+      <label>
+        <span class="option">Left cerebellar hemisphere infiltration</span>
+        <input type="checkbox" data-col="14" />
+      </label>
+      <label>
+        <span class="option">Right cerebellar hemisphere compression</span>
+        <input type="checkbox" data-col="15" />
+      </label>
+      <label>
+        <span class="option">Left cerebellar hemisphere compression</span>
+        <input type="checkbox" data-col="16" />
+      </label>
+      <label>
+        <span class="option">Right MCP compression</span>
+        <input type="checkbox" data-col="17" />
+      </label>
+      <label>
+        <span class="option">Right MCP signal change</span>
+        <input type="checkbox" data-col="18" />
+      </label>
+      <label>
+        <span class="option">Right MCP infiltration</span>
+        <input type="checkbox" data-col="19" />
+      </label>
+      <label>
+        <span class="option">Left MCP compression</span>
+        <input type="checkbox" data-col="20" />
+      </label>
+      <label>
+        <span class="option">Left MCP signal change</span>
+        <input type="checkbox" data-col="21" />
+      </label>
+      <label>
+        <span class="option">Left MCP infiltration</span>
+        <input type="checkbox" data-col="22" />
+      </label>
+      <label>
+        <span class="option">Right SCP compression</span>
+        <input type="checkbox" data-col="23" />
+      </label>
+      <label>
+        <span class="option">Right SCP signal change</span>
+        <input type="checkbox" data-col="24" />
+      </label>
+      <label>
+        <span class="option">Right SCP infiltration</span>
+        <input type="checkbox" data-col="25" />
+      </label>
+      <label>
+        <span class="option">Left SCP compression</span>
+        <input type="checkbox" data-col="26" />
+      </label>
+      <label>
+        <span class="option">Left SCP signal change</span>
+        <input type="checkbox" data-col="27" />
+      </label>
+      <label>
+        <span class="option">Left SCP infiltration</span>
+        <input type="checkbox" data-col="28" />
+      </label>
+      <label>
+        <span class="option">Pre-operative hydrocephalus</span>
+        <input type="checkbox" data-col="29" />
+      </label>
+      <label>
+        <span class="option">Hydrocephalus grade</span>
+        <select>
+          <option data-col="52">Mild</option>
+          <option data-col="53">Moderate</option>
+          <option data-col="54">Severe</option>
+        </select>
+      </label>
+      <label>
+        <span class="option">
+          Maximum tumour diameter
+          <span class="subtitle">(AP - axial)</span>
+        </span>
+        <input type="number" data-col="30" value="0" min="0" step="0.001" />
+      </label>
+      <label>
+        <span class="option">
+          Maximum tumour diameter
+          <span class="subtitle">(transverse - axial)</span>
+        </span>
+        <input type="number" data-col="31" value="0" min="0" step="0.001" />
+      </label>
+      <label>
+        <span class="option">
+          Maximum cerebellar width
+          <span class="subtitle">(axial)</span>
+        </span>
+        <input type="number" data-col="32" value="0" min="0" step="0.001" />
+      </label>
+      <label>
+        <span class="option">Maximal diameter of frontal horns</span>
+        <input type="number" data-col="33" value="0" min="0" step="0.001" />
+      </label>
+      <label>
+        <span class="option">
+          Maximal intracranial diameter
+          <span class="subtitle">(at the same axial level)</span>
+        </span>
+        <input type="number" data-col="34" value="0" min="0" step="0.001" />
+      </label>
+      <label>
+        <span class="option">Evan's Index</span>
+        <input type="number" data-col="35" value="0" min="0" step="0.001" />
+      </label>
+      <label>
+        <span class="option">
+          Maximum tumour height perpendicular to the AC-PC line
+          <span class="subtitle">(superior to inferior - sagittal)</span>
+        </span>
+        <input type="number" data-col="36" value="0" min="0" step="0.001" />
+      </label>
+    </form>
+
+    <div id="result-container">
+      <span id="result-percentage"></span>
+      <span id="result-label">% chance of cerebellar mutism syndrome</span>
+    </div>
+  </body>
+</html>
