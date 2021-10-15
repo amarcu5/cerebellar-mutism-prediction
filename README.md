@@ -1,6 +1,6 @@
 # Prediction of Cerebellar Mutism Syndrome
 
-This repository contains the source code for the publication "Improved Prediction of Post-Operative Paediatric Cerebellar Mutism Syndrome Using An Artificial Neural Network" by Jai Sidpra, Adam P. Marcus, Ulrike Löbel, Sebastian M. Toescu, Derek Yecies, Gerald Grant, David M. Mirsky, Hani J. Marcus, Kristian Aquilina, and Kshitij Mankad.
+This repository contains the source code for the publication "Improved Prediction of Post-Operative Paediatric Cerebellar Mutism Syndrome Using An Artificial Neural Network" by Jai Sidpra, Adam P. Marcus, Ulrike Löbel, Sebastian M. Toescu, Derek Yecies, Gerald Grant, Kristen Yeom, David M. Mirsky, Hani J. Marcus, Kristian Aquilina, and Kshitij Mankad.
 
 ## Usage
 
